@@ -17,8 +17,8 @@ This design implements a simple synchronous BCD calculator. Two 4-bit operands (
 - Use ui[0] to increment operand A.
 - Use ui[1] to increment operand B.
 - Observe the outputs:
-uio_out shows the current values of A and B.
-uo_out shows the sum in BCD (lower 4 bits = ones, upper 4 bits = tens).
+1. uio_out shows the current values of A and B.
+2. uo_out shows the sum in BCD (lower 4 bits = ones, upper 4 bits = tens).
 - Verify correct behavior including overflow (e.g., 9 → 0 wrap-around).
 
 ## External hardware
