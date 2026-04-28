@@ -101,7 +101,7 @@ module tt_um_calculadora (
     assign uio_out = {operandB, operandA};
     assign uio_oe  = 8'hFF;
 
-    wire _unused = &{uio_in, ui_in[7:2], 1'b0};
+    wire _unused = &{uio_in, ui_in[7:2], sum_minus_10[4], 1'b0};
   
 
 endmodule
