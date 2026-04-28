@@ -4,24 +4,101 @@
  */
 
 `default_nettype none
-
-module tt_um_example (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
-    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
-    input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
+module tt_um_calculadora (
+    input  wire [7:0] ui_in,
+    output wire [7:0] uo_out,
+    input  wire [7:0] uio_in,
+    output wire [7:0] uio_out,
+    output wire [7:0] uio_oe,
+    input  wire       ena,
+    input  wire       clk,
+    input  wire       rst_n
 );
 
-  // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+    // Botones en ui_in[0] y ui_in[1]
+    // Sincronizador de 2 etapas
+    reg btnA_sync0, btnA_sync1;
+    reg btnB_sync0, btnB_sync1;
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+    always @(posedge clk) begin
+        btnA_sync0 <= ui_in[0];
+        btnA_sync1 <= btnA_sync0;
+
+        btnB_sync0 <= ui_in[1];
+        btnB_sync1 <= btnB_sync0;
+    end
+
+    // Detector de flanco
+    reg btnA_prev, btnB_prev;
+
+    wire btnA_rise = btnA_sync1 & ~btnA_prev;
+    wire btnB_rise = btnB_sync1 & ~btnB_prev;
+
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            btnA_prev <= 1'b0;
+            btnB_prev <= 1'b0;
+        end else begin
+            btnA_prev <= btnA_sync1;
+            btnB_prev <= btnB_sync1;
+        end
+    end
+
+    // Registros de operandos
+    reg [3:0] operandA;
+    reg [3:0] operandB;
+
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            operandA <= 4'd0;
+            operandB <= 4'd0;
+        end else if (ena) begin
+            if (btnA_rise) begin
+                if (operandA == 4'd9)
+                    operandA <= 4'd0;
+                else
+                    operandA <= operandA + 4'd1;
+            end
+
+            if (btnB_rise) begin
+                if (operandB == 4'd9)
+                    operandB <= 4'd0;
+                else
+                    operandB <= operandB + 4'd1;
+            end
+        end
+    end
+
+    // Suma
+    wire [4:0] sum;
+    assign sum = operandA + operandB;
+
+    // Conversión a decenas y unidades
+    reg [3:0] tens;
+    reg [3:0] ones;
+    always @(*) begin
+        if (sum < 5'd10) begin
+            tens = 4'd0;
+            ones = sum[3:0];
+        end else begin
+            tens = 4'd1;
+            ones = (sum - 5'd10)[3:0];
+        end
+    end
+
+    // Salidas
+    // uo_out[3:0] = unidades
+    // uo_out[7:4] = decenas
+    assign uo_out = {tens, ones};
+
+    // Debug:
+    // uio_out[3:0] = operandA
+    // uio_out[7:4] = operandB
+    assign uio_out = {operandB, operandA};
+    assign uio_oe  = 8'hFF;
+
+    wire _unused = &{uio_in, ui_in[7:2], 1'b0};
+  
 
 endmodule
+
