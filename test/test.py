@@ -7,10 +7,17 @@ from cocotb.triggers import RisingEdge, Timer
 
 
 async def pulse_button(dut, bit):
-    dut.ui_in.value = dut.ui_in.value | (1 << bit)
+    dut.ui_in.value = int(dut.ui_in.value) | (1 << bit)
+
     await RisingEdge(dut.clk)
-    dut.ui_in.value = dut.ui_in.value & ~(1 << bit)
     await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
+
+    dut.ui_in.value = int(dut.ui_in.value) & ~(1 << bit)
+
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
 
 def decode_outputs(uo_out):
@@ -29,14 +36,14 @@ def decode_operands(uio_out):
 
 @cocotb.test()
 async def test_calculadora(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     dut.ena.value = 1
     dut.ui_in.value = 0
     dut.uio_in.value = 0
 
     dut.rst_n.value = 0
-    await Timer(50, units="ns")
+    await Timer(50, unit="ns")
     dut.rst_n.value = 1
 
     await RisingEdge(dut.clk)
@@ -91,4 +98,3 @@ async def test_calculadora(dut):
     assert a == 0, f"operandA esperado 0, obtenido {a}"
     assert b == 4, f"operandB esperado 4, obtenido {b}"
     assert tens == 0 and ones == 4, f"suma esperada 04, obtenida {tens}{ones}"
-
