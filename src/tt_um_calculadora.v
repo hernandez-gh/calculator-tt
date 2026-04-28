@@ -76,13 +76,17 @@ module tt_um_calculadora (
     // Conversión a decenas y unidades
     reg [3:0] tens;
     reg [3:0] ones;
+
+    wire [4:0] sum_minus_10;
+    assign sum_minus_10 = sum - 5'd10;
+
     always @(*) begin
         if (sum < 5'd10) begin
             tens = 4'd0;
             ones = sum[3:0];
         end else begin
             tens = 4'd1;
-            ones = (sum - 5'd10)[3:0];
+            ones = sum_minus_10[3:0];
         end
     end
 
